@@ -1,122 +1,239 @@
-const STORAGE_KEY = "painel_financeiro_pagamentos";
+const API_BASE = window.API_BASE || '/api';
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-
-const hoje = new Date();
-const mesPadrao = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
-
-const elements = {
-  filterClinicaId: document.getElementById("filterClinicaId"),
-  filterMes: document.getElementById("filterMes"),
-  totalAtendimentos: document.getElementById("totalAtendimentos"),
-  totalFaturado: document.getElementById("totalFaturado"),
-  totalParticular: document.getElementById("totalParticular"),
-  totalConvenio: document.getElementById("totalConvenio"),
-  pagamentoForm: document.getElementById("pagamentoForm"),
-  pagamentosTabela: document.getElementById("pagamentosTabela"),
+const state = {
+  pacientes: [],
+  convenios: [],
+  procedimentos: [],
+  atendimentos: [],
+  faturamento: { particular: [], convenios: [] },
 };
 
-const getPagamentos = () => {
-  const rawData = localStorage.getItem(STORAGE_KEY);
-  if (!rawData) return [];
+async function api(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
 
-  try {
-    const parsedData = JSON.parse(rawData);
-    return Array.isArray(parsedData) ? parsedData : [];
-  } catch {
-    return [];
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Falha ${response.status}`);
   }
-};
 
-const savePagamentos = (pagamentos) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pagamentos));
-};
+  if (response.status === 204) return null;
+  return response.json();
+}
 
-const paymentMatchesFilters = (payment, clinicaId, mesReferencia) => {
-  const matchClinica = !clinicaId || payment.clinicaId === clinicaId;
-  const matchMes = !mesReferencia || payment.dataAtendimento.startsWith(mesReferencia);
-  return matchClinica && matchMes;
-};
-
-const render = () => {
-  const clinicaId = elements.filterClinicaId.value.trim();
-  const mesReferencia = elements.filterMes.value;
-
-  const pagamentos = getPagamentos();
-  const filtrados = pagamentos.filter((payment) =>
-    paymentMatchesFilters(payment, clinicaId, mesReferencia),
-  );
-
-  const totalAtendimentos = filtrados.length;
-  const totalFaturado = filtrados.reduce((total, item) => total + item.valor, 0);
-
-  const totalParticular = filtrados
-    .filter((item) => item.tipo === "particular")
-    .reduce((total, item) => total + item.valor, 0);
-
-  const totalConvenio = filtrados
-    .filter((item) => item.tipo === "convenio")
-    .reduce((total, item) => total + item.valor, 0);
-
-  elements.totalAtendimentos.textContent = String(totalAtendimentos);
-  elements.totalFaturado.textContent = formatCurrency(totalFaturado);
-  elements.totalParticular.textContent = formatCurrency(totalParticular);
-  elements.totalConvenio.textContent = formatCurrency(totalConvenio);
-
-  elements.pagamentosTabela.innerHTML = "";
-
-  filtrados
-    .sort((a, b) => b.dataAtendimento.localeCompare(a.dataAtendimento))
-    .forEach((item) => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${item.clinicaId}</td>
-        <td>${new Date(item.dataAtendimento).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td>
-        <td>${item.tipo === "particular" ? "Particular" : "Convênio"}</td>
-        <td class="status-${item.status}">${item.status === "pago" ? "Pago" : "Pendente"}</td>
-        <td>${item.formaPagamento}</td>
-        <td>${formatCurrency(item.valor)}</td>
-      `;
-
-      elements.pagamentosTabela.appendChild(tr);
+function setupNavigation() {
+  const buttons = document.querySelectorAll('.nav-btn');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      buttons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+      document.getElementById(btn.dataset.view).classList.add('active');
     });
-};
+  });
+}
 
-const handleSubmit = (event) => {
-  event.preventDefault();
+function convenioLabel(convenioId) {
+  const c = state.convenios.find((x) => String(x.id) === String(convenioId));
+  return c ? c.nome : 'Particular';
+}
 
-  const pagamento = {
-    clinicaId: document.getElementById("clinicaId").value.trim(),
-    dataAtendimento: document.getElementById("dataAtendimento").value,
-    valor: Number(document.getElementById("valor").value),
-    tipo: document.getElementById("tipo").value,
-    status: document.getElementById("status").value,
-    formaPagamento: document.getElementById("formaPagamento").value,
-  };
-
-  if (!pagamento.clinicaId || !pagamento.dataAtendimento || Number.isNaN(pagamento.valor)) {
-    return;
+function fillSelect(selectId, items, placeholder) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = '';
+  if (placeholder) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = placeholder;
+    select.appendChild(opt);
   }
+  items.forEach((i) => {
+    const opt = document.createElement('option');
+    opt.value = i.id;
+    opt.textContent = i.nome;
+    select.appendChild(opt);
+  });
+}
 
-  const pagamentos = getPagamentos();
-  pagamentos.push(pagamento);
-  savePagamentos(pagamentos);
+async function loadConvenios() {
+  state.convenios = await api('/convenios');
 
-  elements.pagamentoForm.reset();
-  render();
+  fillSelect('paciente-convenio-select', state.convenios, 'Selecione um convênio');
+  fillSelect('procedimento-convenio-select', state.convenios, 'Convênio');
+
+  const tbody = document.getElementById('convenios-tbody');
+  tbody.innerHTML = state.convenios
+    .map((c) => `<tr><td>${c.nome}</td><td>${c.codigo}</td></tr>`)
+    .join('');
+}
+
+async function loadProcedimentos() {
+  state.procedimentos = await api('/convenios/procedimentos');
+  const tbody = document.getElementById('procedimentos-tbody');
+  tbody.innerHTML = state.procedimentos
+    .map(
+      (p) => `<tr>
+        <td>${convenioLabel(p.convenioId)}</td>
+        <td>${p.nome}</td>
+        <td>${p.codigo}</td>
+        <td>R$ ${Number(p.valor).toFixed(2)}</td>
+      </tr>`,
+    )
+    .join('');
+}
+
+async function loadPacientes() {
+  state.pacientes = await api('/pacientes');
+
+  fillSelect('atendimento-paciente-select', state.pacientes, 'Paciente');
+
+  const tbody = document.getElementById('pacientes-tbody');
+  tbody.innerHTML = state.pacientes
+    .map(
+      (p) => `<tr>
+        <td>${p.nome}</td>
+        <td>${p.cpf}</td>
+        <td>${p.particular ? 'Particular' : convenioLabel(p.convenioId)}</td>
+        <td>${p.numeroCarteirinha || '-'}</td>
+      </tr>`,
+    )
+    .join('');
+}
+
+async function loadAtendimentos() {
+  state.atendimentos = await api('/atendimentos');
+  const tbody = document.getElementById('atendimentos-tbody');
+
+  tbody.innerHTML = state.atendimentos
+    .map((a) => {
+      const paciente = state.pacientes.find((p) => String(p.id) === String(a.pacienteId));
+      return `<tr>
+      <td>${paciente?.nome || '-'}</td>
+      <td>${new Date(a.dataHora).toLocaleString('pt-BR')}</td>
+      <td>${a.status}</td>
+      <td>${a.particular ? 'Particular' : convenioLabel(a.convenioId)}</td>
+      <td>
+        <button class="action-btn done" onclick="concluirAtendimento('${a.id}')">Concluir atendimento</button>
+        <button class="action-btn cancel" onclick="cancelarAtendimento('${a.id}')">Cancelar atendimento</button>
+      </td>
+    </tr>`;
+    })
+    .join('');
+}
+
+async function loadFaturamento() {
+  state.faturamento = await api('/faturamento/resumo');
+
+  const particular = document.getElementById('faturamento-particular');
+  particular.innerHTML = state.faturamento.particular
+    .map((i) => `<tr><td>${i.paciente}</td><td>R$ ${Number(i.valor).toFixed(2)}</td><td>${i.status}</td></tr>`)
+    .join('');
+
+  const convenios = document.getElementById('faturamento-convenios');
+  convenios.innerHTML = state.faturamento.convenios
+    .map((i) => `<tr><td>${i.convenio}</td><td>${i.quantidade}</td><td>R$ ${Number(i.valor).toFixed(2)}</td></tr>`)
+    .join('');
+}
+
+function setupForms() {
+  document.getElementById('paciente-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const payload = Object.fromEntries(form.entries());
+    payload.particular = Boolean(form.get('particular'));
+    if (payload.particular) {
+      payload.convenioId = null;
+      payload.numeroCarteirinha = null;
+    }
+
+    await api('/pacientes', { method: 'POST', body: JSON.stringify(payload) });
+    e.target.reset();
+    await loadPacientes();
+  });
+
+  document.getElementById('convenio-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(e.target).entries());
+    await api('/convenios', { method: 'POST', body: JSON.stringify(payload) });
+    e.target.reset();
+    await loadConvenios();
+  });
+
+  document.getElementById('procedimento-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(e.target).entries());
+    payload.valor = Number(payload.valor);
+    await api('/convenios/procedimentos', { method: 'POST', body: JSON.stringify(payload) });
+    e.target.reset();
+    await loadProcedimentos();
+  });
+
+  document.getElementById('atendimento-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(e.target).entries());
+
+    const paciente = state.pacientes.find((p) => String(p.id) === String(payload.pacienteId));
+
+    payload.status = 'Agendado';
+    payload.convenioId = paciente?.particular ? null : paciente?.convenioId || null;
+    payload.particular = Boolean(paciente?.particular);
+    payload.faturamento = {
+      tipo: paciente?.particular ? 'PARTICULAR' : 'CONVENIO',
+      numeroCarteirinha: paciente?.numeroCarteirinha || null,
+      convenioId: payload.convenioId,
+    };
+
+    await api('/atendimentos', { method: 'POST', body: JSON.stringify(payload) });
+    e.target.reset();
+    await loadAtendimentos();
+    await loadFaturamento();
+  });
+
+  document.getElementById('refresh-pacientes').addEventListener('click', loadPacientes);
+  document.getElementById('refresh-convenios').addEventListener('click', async () => {
+    await loadConvenios();
+    await loadProcedimentos();
+  });
+  document.getElementById('refresh-atendimentos').addEventListener('click', loadAtendimentos);
+
+  const particularCheckbox = document.querySelector('input[name="particular"]');
+  particularCheckbox.addEventListener('change', () => {
+    const convenio = document.querySelector('select[name="convenioId"]');
+    const carteira = document.querySelector('input[name="numeroCarteirinha"]');
+    const disable = particularCheckbox.checked;
+    convenio.disabled = disable;
+    carteira.disabled = disable;
+  });
+}
+
+window.concluirAtendimento = async (id) => {
+  await api(`/atendimentos/${id}/concluir`, { method: 'PATCH' });
+  await loadAtendimentos();
+  await loadFaturamento();
 };
 
-elements.filterMes.value = mesPadrao;
+window.cancelarAtendimento = async (id) => {
+  await api(`/atendimentos/${id}/cancelar`, { method: 'PATCH' });
+  await loadAtendimentos();
+};
 
-elements.filterClinicaId.addEventListener("input", render);
+async function bootstrap() {
+  setupNavigation();
+  setupForms();
 
-elements.filterMes.addEventListener("change", render);
+  await loadConvenios();
+  await loadProcedimentos();
+  await loadPacientes();
+  await loadAtendimentos();
+  await loadFaturamento();
+}
 
-elements.pagamentoForm.addEventListener("submit", handleSubmit);
-
-render();
+bootstrap().catch((err) => {
+  const area = document.querySelector('.content');
+  const p = document.createElement('p');
+  p.className = 'muted';
+  p.textContent = `Erro ao carregar dados da API: ${err.message}`;
+  area.prepend(p);
+});
