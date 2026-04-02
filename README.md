@@ -1,34 +1,64 @@
-# Frontend - Sistema de Clínica
+# Sistema de Gestão de Clínicas (Multi-tenant)
 
-Interface web para operação de clínica com suporte a convênios, atendimentos e faturamento.
+Projeto completo com **backend (Node + Express + SQLite)** e **frontend (React + Vite)**.
 
 ## Funcionalidades implementadas
 
-- Cadastro de pacientes com CPF, responsável, convênio, carteirinha e opção de particular.
-- Cadastro de convênios e tabela de procedimentos por convênio.
-- Cadastro de atendimentos sempre iniciando com status `Agendado`.
-- Botões na lista de atendimentos para concluir ou cancelar.
-- Faturamento separado entre Particular e Convênios.
-- Menu de navegação com Pacientes, Profissionais, Atendimentos, Convênios e Faturamento.
+- Login com perfis: `admin`, `secretaria`, `profissional`
+- Cadastro de pacientes
+- Cadastro de profissionais
+- Cadastro de atendimentos
+- Painel financeiro simples
+- Multi-tenant por `clinica_id`
+- Separação de dados por clínica
+- Profissional visualiza apenas seus próprios dados
 
-## Integração com backend existente
+## Estrutura
 
-O frontend utiliza os endpoints abaixo (prefixo padrão `/api`):
+- `backend/`: API REST e banco SQLite
+- `frontend/`: interface web React
 
-- `GET/POST /pacientes`
-- `GET/POST /convenios`
-- `GET/POST /convenios/procedimentos`
-- `GET/POST /atendimentos`
-- `PATCH /atendimentos/:id/concluir`
-- `PATCH /atendimentos/:id/cancelar`
-- `GET /faturamento/resumo`
+## Como rodar
 
-Para apontar para outra base, defina `window.API_BASE` antes de carregar `app.js`.
-
-## Execução
-
-Basta servir arquivos estáticos, por exemplo:
+### 1) Backend
 
 ```bash
-python3 -m http.server 8080
+cd backend
+cp .env.example .env
+npm install
+npm run dev
 ```
+
+Backend em: `http://localhost:4000`
+
+### 2) Frontend
+
+Em outro terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend em: `http://localhost:5173`
+
+## Usuários de exemplo (senha `123456`)
+
+- `admin@vida.com` (admin)
+- `secretaria@vida.com` (secretaria)
+- `joao@vida.com` (profissional)
+- `admin@equilibrio.com` (admin de outra clínica)
+
+## Regras de acesso
+
+- Dados sempre filtrados por `clinica_id`
+- Profissional:
+  - só vê seu próprio cadastro de profissional
+  - só vê atendimentos em que ele é o profissional
+  - só vê pacientes atendidos por ele
+  - vê financeiro apenas do próprio faturamento
+
+## Observação
+
+O arquivo `clinic.db` é criado automaticamente no backend na primeira execução, com dados iniciais para facilitar testes.
