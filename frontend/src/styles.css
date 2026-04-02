@@ -1,0 +1,13 @@
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
+body { margin: 0; background: #f5f7fb; }
+.container { max-width: 960px; margin: 0 auto; padding: 20px; }
+.card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 7px rgba(0,0,0,.08); }
+.login { max-width: 540px; margin: 60px auto; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+header button { margin-left: 10px; }
+nav { display: flex; gap: 8px; margin-bottom: 12px; }
+form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
+input, select, button { padding: 9px; border: 1px solid #d0d6e2; border-radius: 6px; }
+button { background: #2255dd; color: #fff; border: none; cursor: pointer; }
+ul { margin: 0; padding-left: 18px; }
+.error { color: #cc1f1f; }

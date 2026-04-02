@@ -1,197 +1,40 @@
 :root {
-  font-family: Inter, system-ui, Arial, sans-serif;
-  color: #1f2937;
-  background: #f3f4f6;
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --line: #d1d5db;
+  --primary: #2563eb;
+  --danger: #dc2626;
+  --success: #16a34a;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); }
+.layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.sidebar { background: #111827; color: #fff; padding: 1rem; }
+.sidebar h1 { font-size: 1.2rem; }
+.sidebar nav { display: flex; flex-direction: column; gap: .5rem; }
+.nav-btn { padding: .65rem; border: 0; border-radius: 8px; background: #1f2937; color: #fff; text-align: left; cursor: pointer; }
+.nav-btn.active { background: var(--primary); }
+.content { padding: 1rem 1.5rem; }
+.view { display: none; }
+.view.active { display: block; }
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; margin-top: 1rem; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .75rem; }
+input, select, textarea, button { padding: .6rem; border-radius: 8px; border: 1px solid var(--line); font: inherit; }
+button { background: var(--primary); color: #fff; border: 0; cursor: pointer; }
+.checkbox { display: flex; align-items: center; gap: .5rem; }
+.checkbox input { width: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .6rem; border-bottom: 1px solid var(--line); }
+.action-btn { margin-right: .5rem; padding: .4rem .6rem; }
+.action-btn.cancel { background: var(--danger); }
+.action-btn.done { background: var(--success); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.muted { color: #6b7280; }
 
-body {
-  margin: 0;
-}
-
-header {
-  background: #111827;
-  color: #fff;
-  padding: 20px;
-}
-
-header h1 {
-  margin: 0;
-}
-
-header p {
-  margin: 6px 0 0;
-  color: #cbd5e1;
-}
-
-main {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.tabs {
-  display: flex;
-  gap: 8px;
-  padding: 14px 20px;
-  background: #e5e7eb;
-  position: sticky;
-  top: 0;
-}
-
-.tab-button {
-  border: 0;
-  background: #fff;
-  padding: 10px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.tab-button.active {
-  background: #3b82f6;
-  color: #fff;
-}
-
-.tab-panel {
-  display: none;
-}
-
-.tab-panel.active {
-  display: block;
-}
-
-.card {
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 14px;
-}
-
-.form-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.subgrid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-label {
-  display: grid;
-  gap: 6px;
-  font-weight: 600;
-}
-
-input,
-select,
-button {
-  font: inherit;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-}
-
-button {
-  width: fit-content;
-  background: #2563eb;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-button.secondary {
-  background: #6b7280;
-}
-
-button.danger {
-  background: #dc2626;
-}
-
-fieldset {
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-}
-
-.inline {
-  display: inline-flex;
-  gap: 6px;
-  margin-right: 16px;
-  font-weight: 500;
-}
-
-.hidden {
-  display: none;
-}
-
-.list {
-  margin-top: 12px;
-  display: grid;
-  gap: 8px;
-}
-
-.list-item {
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.inline-form {
-  display: flex;
-  gap: 12px;
-  align-items: end;
-  flex-wrap: wrap;
-}
-
-.preview p {
-  margin: 6px 0;
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-}
-
-th,
-td {
-  border: 1px solid #e5e7eb;
-  padding: 8px;
-  text-align: left;
-  vertical-align: top;
-}
-
-.status {
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.status.agendado {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.status.concluido {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.status.cancelado {
-  background: #fee2e2;
-  color: #b91c1c;
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar nav { flex-direction: row; flex-wrap: wrap; }
+  .grid-2 { grid-template-columns: 1fr; }
 }

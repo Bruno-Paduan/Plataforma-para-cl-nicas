@@ -1,0 +1,4 @@
+node_modules
+backend/clinic.db
+backend/.env
+frontend/dist

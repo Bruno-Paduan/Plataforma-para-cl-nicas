@@ -1,139 +1,158 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestão de Clínicas</title>
+    <title>Clínica - Gestão</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header>
-      <h1>Gestão de Clínicas</h1>
-      <p>Modelagem profissional de Pacientes, Convênios e Atendimentos</p>
-    </header>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1>Clínica</h1>
+        <nav>
+          <button class="nav-btn active" data-view="pacientes">Pacientes</button>
+          <button class="nav-btn" data-view="profissionais">Profissionais</button>
+          <button class="nav-btn" data-view="atendimentos">Atendimentos</button>
+          <button class="nav-btn" data-view="convenios">Convênios</button>
+          <button class="nav-btn" data-view="faturamento">Faturamento</button>
+        </nav>
+      </aside>
 
-    <nav class="tabs">
-      <button class="tab-button active" data-tab="pacientes">Pacientes</button>
-      <button class="tab-button" data-tab="convenios">Convênios</button>
-      <button class="tab-button" data-tab="atendimentos">Atendimentos</button>
-    </nav>
-
-    <main>
-      <section id="pacientes" class="tab-panel active">
-        <h2>Cadastro de Pacientes</h2>
-        <form id="patient-form" class="card form-grid">
-          <label>
-            Nome completo
-            <input type="text" id="patient-name" required />
-          </label>
-
-          <label>
-            CPF
-            <input type="text" id="patient-cpf" placeholder="000.000.000-00" required />
-          </label>
-
-          <fieldset>
-            <legend>Tipo de atendimento padrão</legend>
-            <label class="inline">
-              <input type="radio" name="patient-care-type" value="Particular" checked />
-              Particular
-            </label>
-            <label class="inline">
-              <input type="radio" name="patient-care-type" value="Convênio" />
-              Convênio
-            </label>
-          </fieldset>
-
-          <div id="insurance-fields" class="subgrid hidden">
-            <label>
-              Convênio
-              <select id="patient-insurance"></select>
-            </label>
-
-            <label>
-              Número da carteirinha
-              <input type="text" id="patient-card-number" />
-            </label>
-
-            <label>
-              Plano (opcional)
-              <input type="text" id="patient-plan" />
-            </label>
-
-            <label>
-              Validade (opcional)
-              <input type="date" id="patient-validity" />
-            </label>
+      <main class="content">
+        <section id="pacientes" class="view active">
+          <div class="header-row">
+            <h2>Cadastro de Pacientes</h2>
+            <button id="refresh-pacientes">Atualizar</button>
           </div>
-
-          <button type="submit">Salvar paciente</button>
-        </form>
-
-        <h3>Pacientes cadastrados</h3>
-        <div id="patients-list" class="list"></div>
-      </section>
-
-      <section id="convenios" class="tab-panel">
-        <h2>Cadastro de Convênios</h2>
-        <form id="insurance-form" class="card inline-form">
-          <label>
-            Nome do convênio
-            <input type="text" id="insurance-name" required />
-          </label>
-          <button type="submit">Cadastrar convênio</button>
-        </form>
-
-        <h3>Convênios cadastrados</h3>
-        <ul id="insurance-list" class="list"></ul>
-      </section>
-
-      <section id="atendimentos" class="tab-panel">
-        <h2>Novo Atendimento</h2>
-        <form id="appointment-form" class="card form-grid">
-          <label>
-            Paciente
-            <select id="appointment-patient" required></select>
-          </label>
-
-          <label>
-            Profissional
-            <input type="text" id="appointment-professional" required />
-          </label>
-
-          <label>
-            Data e hora
-            <input type="datetime-local" id="appointment-datetime" required />
-          </label>
-
-          <div class="preview card">
-            <strong>Dados puxados automaticamente do paciente:</strong>
-            <p>Tipo: <span id="preview-type">-</span></p>
-            <p>Convênio: <span id="preview-insurance">-</span></p>
-            <p>Carteirinha: <span id="preview-card">-</span></p>
+          <form id="paciente-form" class="card form-grid">
+            <input name="nome" placeholder="Nome" required />
+            <input name="cpf" placeholder="CPF" required />
+            <input name="dataNascimento" type="date" required />
+            <input name="responsavel" placeholder="Responsável (menor de idade)" />
+            <label class="checkbox">
+              <input type="checkbox" name="particular" />
+              Paciente particular (sem convênio)
+            </label>
+            <select name="convenioId" id="paciente-convenio-select"></select>
+            <input name="numeroCarteirinha" placeholder="Número da carteirinha" />
+            <button type="submit">Salvar paciente</button>
+          </form>
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>CPF</th>
+                  <th>Convênio</th>
+                  <th>Carteirinha</th>
+                </tr>
+              </thead>
+              <tbody id="pacientes-tbody"></tbody>
+            </table>
           </div>
+        </section>
 
-          <button type="submit">Criar atendimento (Agendado)</button>
-        </form>
+        <section id="profissionais" class="view">
+          <h2>Profissionais</h2>
+          <p>Área mantida para integração com backend existente.</p>
+        </section>
 
-        <h3>Atendimentos</h3>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Paciente</th>
-                <th>Profissional</th>
-                <th>Status</th>
-                <th>Tipo</th>
-                <th>Convênio</th>
-                <th>Data/Hora</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="appointments-table"></tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+        <section id="atendimentos" class="view">
+          <div class="header-row">
+            <h2>Atendimentos</h2>
+            <button id="refresh-atendimentos">Atualizar</button>
+          </div>
+          <form id="atendimento-form" class="card form-grid">
+            <select name="pacienteId" id="atendimento-paciente-select" required></select>
+            <input type="datetime-local" name="dataHora" required />
+            <input name="tipo" placeholder="Tipo de atendimento" required />
+            <textarea name="observacoes" placeholder="Observações"></textarea>
+            <button type="submit">Agendar atendimento</button>
+          </form>
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Data/Hora</th>
+                  <th>Status</th>
+                  <th>Convênio</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="atendimentos-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="convenios" class="view">
+          <div class="header-row">
+            <h2>Convênios</h2>
+            <button id="refresh-convenios">Atualizar</button>
+          </div>
+          <form id="convenio-form" class="card form-grid">
+            <input name="nome" placeholder="Nome do convênio" required />
+            <input name="codigo" placeholder="Código" required />
+            <button type="submit">Salvar convênio</button>
+          </form>
+
+          <form id="procedimento-form" class="card form-grid">
+            <h3>Tabela de procedimentos por convênio</h3>
+            <select name="convenioId" id="procedimento-convenio-select" required></select>
+            <input name="nome" placeholder="Procedimento" required />
+            <input name="codigo" placeholder="Código TUSS/Interno" required />
+            <input name="valor" type="number" min="0" step="0.01" placeholder="Valor" required />
+            <button type="submit">Adicionar procedimento</button>
+          </form>
+
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Convênio</th>
+                  <th>Código</th>
+                </tr>
+              </thead>
+              <tbody id="convenios-tbody"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Convênio</th>
+                  <th>Procedimento</th>
+                  <th>Código</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody id="procedimentos-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="faturamento" class="view">
+          <h2>Faturamento / Financeiro</h2>
+          <div class="grid-2">
+            <div class="card">
+              <h3>Particular</h3>
+              <table>
+                <thead><tr><th>Paciente</th><th>Valor</th><th>Status</th></tr></thead>
+                <tbody id="faturamento-particular"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3>Convênios</h3>
+              <table>
+                <thead><tr><th>Convênio</th><th>Qtd</th><th>Valor</th></tr></thead>
+                <tbody id="faturamento-convenios"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
 
     <script src="app.js"></script>
   </body>
