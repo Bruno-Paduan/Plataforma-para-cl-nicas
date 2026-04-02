@@ -1,45 +1,64 @@
-# Cadastro de profissionais
+# Sistema de Gestão de Clínicas (Multi-tenant)
 
-API simples para cadastro de profissionais por clínica.
+Projeto completo com **backend (Node + Express + SQLite)** e **frontend (React + Vite)**.
 
-## Campos
+## Funcionalidades implementadas
 
-- `nome`
-- `especialidade`
-- `percentual_repasse`
-- `clinica_id`
+- Login com perfis: `admin`, `secretaria`, `profissional`
+- Cadastro de pacientes
+- Cadastro de profissionais
+- Cadastro de atendimentos
+- Painel financeiro simples
+- Multi-tenant por `clinica_id`
+- Separação de dados por clínica
+- Profissional visualiza apenas seus próprios dados
 
-## Regras aplicadas
+## Estrutura
 
-- Cada profissional pertence a uma clínica (`clinica_id` obrigatório).
-- Listagem sempre filtrada por `clinica_id`.
+- `backend/`: API REST e banco SQLite
+- `frontend/`: interface web React
 
-## Executar
+## Como rodar
+
+### 1) Backend
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python app.py
+cd backend
+cp .env.example .env
+npm install
+npm run dev
 ```
 
-## Endpoints
+Backend em: `http://localhost:4000`
 
-### Criar profissional
+### 2) Frontend
 
-`POST /profissionais`
+Em outro terminal:
 
-Payload:
-
-```json
-{
-  "nome": "Dr. João",
-  "especialidade": "Cardiologia",
-  "percentual_repasse": 35,
-  "clinica_id": 1
-}
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-### Listar profissionais por clínica
+Frontend em: `http://localhost:5173`
 
-`GET /profissionais?clinica_id=1`
+## Usuários de exemplo (senha `123456`)
+
+- `admin@vida.com` (admin)
+- `secretaria@vida.com` (secretaria)
+- `joao@vida.com` (profissional)
+- `admin@equilibrio.com` (admin de outra clínica)
+
+## Regras de acesso
+
+- Dados sempre filtrados por `clinica_id`
+- Profissional:
+  - só vê seu próprio cadastro de profissional
+  - só vê atendimentos em que ele é o profissional
+  - só vê pacientes atendidos por ele
+  - vê financeiro apenas do próprio faturamento
+
+## Observação
+
+O arquivo `clinic.db` é criado automaticamente no backend na primeira execução, com dados iniciais para facilitar testes.
