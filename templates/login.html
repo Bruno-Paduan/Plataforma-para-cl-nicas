@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Entrar no sistema</h1>
+  <p class="muted">Escolha um usuário para simular o acesso.</p>
+
+  <form method="post">
+    <div class="field">
+      <label for="user_id">Usuário</label>
+      <select id="user_id" name="user_id" required>
+        <option value="">Selecione</option>
+        {% for user in users %}
+          <option value="{{ user.id }}">{{ user.nome }} (Clínica {{ user.clinica_id }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="actions">
+      <button type="submit">Entrar</button>
+    </div>
+  </form>
+{% endblock %}

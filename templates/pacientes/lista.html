@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="header">
+    <div>
+      <h1>Pacientes</h1>
+      <div class="muted">Usuário: {{ user.nome }} | Clínica: {{ user.clinica_id }}</div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="{{ url_for('novo_paciente') }}">Novo paciente</a>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="btn secondary" type="submit">Sair</button>
+      </form>
+    </div>
+  </div>
+
+  {% if pacientes %}
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>Data de nascimento</th>
+          <th>Tipo</th>
+          <th>Convênio</th>
+          <th>Clínica</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for paciente in pacientes %}
+        <tr>
+          <td>{{ paciente.nome }}</td>
+          <td>{{ paciente.telefone }}</td>
+          <td>{{ paciente.data_nascimento }}</td>
+          <td>{{ 'Convênio' if paciente.tipo == 'convenio' else 'Particular' }}</td>
+          <td>{{ paciente.convenio or '-' }}</td>
+          <td>{{ paciente.clinica_id }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Nenhum paciente cadastrado para sua clínica.</p>
+  {% endif %}
+{% endblock %}
