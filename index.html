@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel Financeiro</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Painel Financeiro</h1>
+        <p>Visão de atendimentos e pagamentos por clínica.</p>
+      </header>
+
+      <section class="card controls">
+        <h2>Filtros</h2>
+        <div class="grid two-cols">
+          <label>
+            Clínica ID
+            <input type="text" id="filterClinicaId" placeholder="Ex.: 1" />
+          </label>
+          <label>
+            Mês de referência
+            <input type="month" id="filterMes" />
+          </label>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <article class="card summary-item">
+          <h3>Total de atendimentos no mês</h3>
+          <p id="totalAtendimentos">0</p>
+        </article>
+        <article class="card summary-item">
+          <h3>Total faturado</h3>
+          <p id="totalFaturado">R$ 0,00</p>
+        </article>
+        <article class="card summary-item">
+          <h3>Particular</h3>
+          <p id="totalParticular">R$ 0,00</p>
+        </article>
+        <article class="card summary-item">
+          <h3>Convênios</h3>
+          <p id="totalConvenio">R$ 0,00</p>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Registrar pagamento</h2>
+        <form id="pagamentoForm" class="grid form-grid">
+          <label>
+            Clínica ID
+            <input type="text" id="clinicaId" required />
+          </label>
+
+          <label>
+            Data do atendimento
+            <input type="date" id="dataAtendimento" required />
+          </label>
+
+          <label>
+            Valor (R$)
+            <input type="number" id="valor" step="0.01" min="0" required />
+          </label>
+
+          <label>
+            Tipo
+            <select id="tipo" required>
+              <option value="particular">Particular</option>
+              <option value="convenio">Convênio</option>
+            </select>
+          </label>
+
+          <label>
+            Status
+            <select id="status" required>
+              <option value="pago">Pago</option>
+              <option value="pendente">Pendente</option>
+            </select>
+          </label>
+
+          <label>
+            Forma de pagamento
+            <select id="formaPagamento" required>
+              <option value="pix">PIX</option>
+              <option value="cartao">Cartão</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="boleto">Boleto</option>
+              <option value="transferencia">Transferência</option>
+            </select>
+          </label>
+
+          <button type="submit">Registrar pagamento</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Pagamentos registrados</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Clínica</th>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Forma</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody id="pagamentosTabela"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
