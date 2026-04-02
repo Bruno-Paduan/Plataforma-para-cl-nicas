@@ -1,194 +1,154 @@
+from __future__ import annotations
+
+import json
 import os
 import sqlite3
-from contextlib import closing
-from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
-from flask import Flask, g, redirect, render_template, request, session, url_for, flash
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(BASE_DIR, "clinica.db")
-
-app = Flask(__name__)
-app.config["SECRET_KEY"] = "dev-secret-key-change-me"
+BASE_DIR = Path(__file__).resolve().parent
+DATABASE = os.getenv("DATABASE_PATH", str(BASE_DIR / "database.db"))
 
 
-def get_db():
-    if "db" not in g:
-        g.db = sqlite3.connect(DATABASE)
-        g.db.row_factory = sqlite3.Row
-    return g.db
-
-
-@app.teardown_appcontext
-def close_db(_):
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()
-
-
-def init_db():
+def get_db() -> sqlite3.Connection:
     db = sqlite3.connect(DATABASE)
-    with closing(db) as conn:
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                clinica_id INTEGER NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS pacientes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                telefone TEXT NOT NULL,
-                data_nascimento TEXT NOT NULL,
-                tipo TEXT NOT NULL CHECK(tipo IN ('particular', 'convenio')),
-                convenio TEXT,
-                clinica_id INTEGER NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            """
-        )
-
-        total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        if total_users == 0:
-            conn.executemany(
-                "INSERT INTO users (nome, clinica_id) VALUES (?, ?)",
-                [
-                    ("Alice", 1),
-                    ("Bruno", 1),
-                    ("Carla", 2),
-                ],
-            )
-        conn.commit()
+    db.row_factory = sqlite3.Row
+    return db
 
 
-def parse_date(date_text):
-    try:
-        datetime.strptime(date_text, "%Y-%m-%d")
-        return True
-    except ValueError:
-        return False
-
-
-def get_current_user():
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-
-    db = get_db()
-    user = db.execute("SELECT id, nome, clinica_id FROM users WHERE id = ?", (user_id,)).fetchone()
-    return user
-
-
-init_db()
-
-@app.before_request
-def require_login():
-    if request.endpoint in {"login", "static"}:
-        return
-
-    user = get_current_user()
-    if user is None:
-        return redirect(url_for("login"))
-
-
-@app.route("/", methods=["GET"])
-def home():
-    return redirect(url_for("lista_pacientes"))
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    db = get_db()
-    users = db.execute("SELECT id, nome, clinica_id FROM users ORDER BY id").fetchall()
-
-    if request.method == "POST":
-        user_id = request.form.get("user_id", type=int)
-        user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
-
-        if user:
-            session.clear()
-            session["user_id"] = user_id
-            return redirect(url_for("lista_pacientes"))
-
-        flash("Usuário inválido.", "error")
-
-    return render_template("login.html", users=users)
-
-
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
-
-
-@app.route("/pacientes", methods=["GET"])
-def lista_pacientes():
-    user = get_current_user()
-    db = get_db()
-
-    pacientes = db.execute(
-        """
-        SELECT id, nome, telefone, data_nascimento, tipo, convenio, clinica_id, created_at
-        FROM pacientes
-        WHERE clinica_id = ?
-        ORDER BY id DESC
-        """,
-        (user["clinica_id"],),
-    ).fetchall()
-
-    return render_template("pacientes/lista.html", pacientes=pacientes, user=user)
-
-
-@app.route("/pacientes/novo", methods=["GET", "POST"])
-def novo_paciente():
-    user = get_current_user()
-
-    if request.method == "POST":
-        nome = request.form.get("nome", "").strip()
-        telefone = request.form.get("telefone", "").strip()
-        data_nascimento = request.form.get("data_nascimento", "").strip()
-        tipo = request.form.get("tipo", "").strip()
-        convenio = request.form.get("convenio", "").strip()
-        clinica_id = request.form.get("clinica_id", type=int)
-
-        errors = []
-
-        if not nome:
-            errors.append("Nome é obrigatório.")
-        if not telefone:
-            errors.append("Telefone é obrigatório.")
-        if not data_nascimento or not parse_date(data_nascimento):
-            errors.append("Data de nascimento inválida. Use o formato YYYY-MM-DD.")
-        if tipo not in {"particular", "convenio"}:
-            errors.append("Tipo deve ser particular ou convenio.")
-        if tipo == "convenio" and not convenio:
-            errors.append("Convênio é obrigatório quando o tipo é convênio.")
-        if clinica_id != user["clinica_id"]:
-            errors.append("Você só pode cadastrar pacientes da sua clínica.")
-
-        if errors:
-            for err in errors:
-                flash(err, "error")
-            return render_template("pacientes/novo.html", user=user)
-
-        db = get_db()
+def init_db() -> None:
+    with get_db() as db:
         db.execute(
             """
-            INSERT INTO pacientes (nome, telefone, data_nascimento, tipo, convenio, clinica_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (nome, telefone, data_nascimento, tipo, convenio if convenio else None, user["clinica_id"]),
+            CREATE TABLE IF NOT EXISTS profissionais (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                especialidade TEXT NOT NULL,
+                percentual_repasse REAL NOT NULL CHECK(percentual_repasse >= 0 AND percentual_repasse <= 100),
+                clinica_id INTEGER NOT NULL
+            )
+            """
         )
         db.commit()
 
-        flash("Paciente cadastrado com sucesso.", "success")
-        return redirect(url_for("lista_pacientes"))
 
-    return render_template("pacientes/novo.html", user=user)
+def validate_payload(payload: dict) -> tuple[dict | None, tuple[dict, int] | None]:
+    required_fields = ["nome", "especialidade", "percentual_repasse", "clinica_id"]
+    missing = [field for field in required_fields if field not in payload]
+    if missing:
+        return None, ({"error": f"Campos obrigatórios ausentes: {', '.join(missing)}"}, 400)
+
+    try:
+        percentual_repasse = float(payload["percentual_repasse"])
+    except (TypeError, ValueError):
+        return None, ({"error": "percentual_repasse deve ser numérico"}, 400)
+
+    if percentual_repasse < 0 or percentual_repasse > 100:
+        return None, ({"error": "percentual_repasse deve estar entre 0 e 100"}, 400)
+
+    try:
+        clinica_id = int(payload["clinica_id"])
+    except (TypeError, ValueError):
+        return None, ({"error": "clinica_id deve ser inteiro"}, 400)
+
+    data = {
+        "nome": str(payload["nome"]).strip(),
+        "especialidade": str(payload["especialidade"]).strip(),
+        "percentual_repasse": percentual_repasse,
+        "clinica_id": clinica_id,
+    }
+    if not data["nome"] or not data["especialidade"]:
+        return None, ({"error": "nome e especialidade não podem ser vazios"}, 400)
+
+    return data, None
+
+
+def create_profissional(payload: dict) -> tuple[dict, int]:
+    data, error = validate_payload(payload)
+    if error:
+        return error
+
+    with get_db() as db:
+        cursor = db.execute(
+            """
+            INSERT INTO profissionais (nome, especialidade, percentual_repasse, clinica_id)
+            VALUES (?, ?, ?, ?)
+            """,
+            (data["nome"], data["especialidade"], data["percentual_repasse"], data["clinica_id"]),
+        )
+        db.commit()
+
+    return {"id": cursor.lastrowid, **data}, 201
+
+
+def list_profissionais(clinica_id: int | None) -> tuple[dict | list[dict], int]:
+    if clinica_id is None:
+        return {"error": "Parâmetro clinica_id é obrigatório"}, 400
+
+    with get_db() as db:
+        rows = db.execute(
+            """
+            SELECT id, nome, especialidade, percentual_repasse, clinica_id
+            FROM profissionais
+            WHERE clinica_id = ?
+            ORDER BY id ASC
+            """,
+            (clinica_id,),
+        ).fetchall()
+
+    return [dict(row) for row in rows], 200
+
+
+class ProfissionaisHandler(BaseHTTPRequestHandler):
+    def _send_json(self, payload: dict | list[dict], status: int = 200) -> None:
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self) -> None:  # noqa: N802
+        if self.path != "/profissionais":
+            self._send_json({"error": "Not Found"}, 404)
+            return
+
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(content_length) if content_length > 0 else b"{}"
+            payload = json.loads(raw.decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            self._send_json({"error": "JSON inválido"}, 400)
+            return
+
+        response, status = create_profissional(payload)
+        self._send_json(response, status)
+
+    def do_GET(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        if parsed.path != "/profissionais":
+            self._send_json({"error": "Not Found"}, 404)
+            return
+
+        params = parse_qs(parsed.query)
+        clinica_id = params.get("clinica_id", [None])[0]
+        try:
+            clinica_id_int = int(clinica_id) if clinica_id is not None else None
+        except ValueError:
+            self._send_json({"error": "clinica_id deve ser inteiro"}, 400)
+            return
+
+        response, status = list_profissionais(clinica_id_int)
+        self._send_json(response, status)
+
+
+def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
+    init_db()
+    server = HTTPServer((host, port), ProfissionaisHandler)
+    print(f"Servidor em http://{host}:{port}")
+    server.serve_forever()
 
 
 if __name__ == "__main__":
-    init_db()
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    run_server()
