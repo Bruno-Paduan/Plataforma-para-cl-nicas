@@ -1,0 +1,14 @@
+{
+  "name": "clinica-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo 'Configure o bundler (Vite/CRA) conforme seu projeto base'",
+    "check": "node --check src/App.jsx"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
