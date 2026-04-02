@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Novo paciente</h1>
+  <p class="muted">Cadastre um paciente da sua clínica ({{ user.clinica_id }}).</p>
+
+  <form method="post">
+    <div class="row">
+      <div class="field">
+        <label for="nome">Nome</label>
+        <input id="nome" name="nome" required>
+      </div>
+      <div class="field">
+        <label for="telefone">Telefone</label>
+        <input id="telefone" name="telefone" required>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="data_nascimento">Data de nascimento</label>
+        <input id="data_nascimento" name="data_nascimento" type="date" required>
+      </div>
+      <div class="field">
+        <label for="tipo">Tipo</label>
+        <select id="tipo" name="tipo" required>
+          <option value="particular">Particular</option>
+          <option value="convenio">Convênio</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="convenio">Convênio (opcional)</label>
+        <input id="convenio" name="convenio" placeholder="Ex.: Unimed">
+      </div>
+      <div class="field">
+        <label for="clinica_id">Clínica ID</label>
+        <input id="clinica_id_view" value="{{ user.clinica_id }}" readonly>
+        <input type="hidden" id="clinica_id" name="clinica_id" value="{{ user.clinica_id }}">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit">Salvar paciente</button>
+      <a class="btn secondary" href="{{ url_for('lista_pacientes') }}">Voltar</a>
+    </div>
+  </form>
+{% endblock %}

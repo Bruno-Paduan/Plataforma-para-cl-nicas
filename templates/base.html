@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title or 'Sistema da Clínica' }}</title>
+    <style>
+      body { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; }
+      .container { max-width: 920px; margin: 2rem auto; background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; }
+      input, select { width: 100%; padding: .6rem; border: 1px solid #cfd8e3; border-radius: 6px; }
+      label { font-size: .9rem; font-weight: bold; margin-bottom: .2rem; display: block; }
+      .field { flex: 1 1 250px; }
+      .actions { margin-top: 1rem; display: flex; gap: .5rem; align-items: center; }
+      button, .btn { border: 0; background: #1d4ed8; color: #fff; padding: .65rem .9rem; border-radius: 6px; cursor: pointer; text-decoration: none; }
+      .btn.secondary { background: #475569; }
+      table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+      th, td { border-bottom: 1px solid #e2e8f0; padding: .55rem; text-align: left; }
+      .flash { padding: .6rem; border-radius: 6px; margin-bottom: .8rem; }
+      .flash.error { background: #fee2e2; color: #991b1b; }
+      .flash.success { background: #dcfce7; color: #166534; }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+      .muted { color: #475569; font-size: .9rem; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </body>
+</html>
